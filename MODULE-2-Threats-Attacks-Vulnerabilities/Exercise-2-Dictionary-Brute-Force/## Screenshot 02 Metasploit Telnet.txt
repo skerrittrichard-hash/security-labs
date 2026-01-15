@@ -1,0 +1,51 @@
+## Screenshot 02: Metasploit Telnet Dictionary Attack Execution
+
+**Attack Type:**
+Brute Force / Dictionary Attack (Telnet Port 23)
+
+**Module Used:**
+auxiliary/scanner/telnet/telnet_login
+
+**Configuration:**
+- Target: 192.168.4.55
+- Port: 23 (Telnet)
+- Username: root
+- Passwords tried: root, password, admin, 123456, telnet
+- Threads: 1 (sequential attempts)
+
+**Attack Results:**
+- LOGIN FAILED: root:password (Incorrect)
+- LOGIN FAILED: root:admin (Incorrect)
+- LOGIN FAILED: root:123456 (Incorrect)
+- LOGIN FAILED: root:telnet (Incorrect)
+- Status: 1 of 1 hosts scanned (100% complete)
+
+**Detection (Honeypot Logger Shows):**
+- IP 192.168.4.54 tried to invade by telnet (USER root)
+- IP 192.168.4.54 tried to invade by telnet (PASSWORD root)
+- IP 192.168.4.54 tried to invade by telnet (PASSWORD admin)
+- IP 192.168.4.54 tried to invade by telnet (PASSWORD password)
+- IP 192.168.4.54 tried to invade by telnet (PASSWORD 123456)
+- IP 192.168.4.54 tried to invade by telnet (PASSWORD telnet)
+
+**Wireshark Observation:**
+- Traffic spike on port 23 (TCP connections)
+- Multiple connection attempts visible
+- Failed handshake patterns captured
+
+**Module 2 Mapping:**
+Objective 2.2 - Explain various types of vulnerabilities
+Objective 2.3 - Analyze indicators of malicious activity
+
+**Key Takeaway:**
+Attack failed (weak wordlist), but system detected every attempt. Real attackers would:
+1. Use larger wordlist (rockyou.txt - 14M+ passwords)
+2. Try multiple usernames
+3. Target different service (SMB, FTP, SSH)
+
+**Why This Matters for Exam:**
+Tests understanding of:
+- Attack methodology (brute force)
+- Detection indicators (IDS/IPS logging)
+- Failed vs. successful compromise
+- Attacker pivot/adaptation

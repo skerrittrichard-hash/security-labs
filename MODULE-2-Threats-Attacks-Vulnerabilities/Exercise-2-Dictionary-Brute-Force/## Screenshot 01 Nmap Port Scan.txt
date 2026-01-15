@@ -1,0 +1,27 @@
+## Screenshot 01: Nmap Port Scan
+
+**Command Executed:**
+nmap 192.168.4.55
+
+**Objective:**
+Reconnaissance - Identify open ports and services (attack surface)
+
+**Module 2 Mapping:**
+Objective 2.1 - Explain common threat vectors and attack surfaces
+Objective 2.2 - Explain various types of vulnerabilities
+
+**What This Shows:**
+- 10 open ports identified on target system
+- Services running: FTP, Telnet, SMTP, HTTP, MSRPC, NetBIOS, Netbus
+- Each port = potential exploit vector
+- Nmap completed scan in 0.58 seconds
+
+**Indicators of Compromise (IoCs):**
+- Port scan activity detected by Wireshark (packets 1-8 visible)
+- Honeypot logger detected: "tried to invade by ftp", "tried to invade by telnet"
+
+**Why This Matters for Exam:**
+Real attackers start with reconnaissance. Security+ tests ability to:
+- Identify attack surfaces
+- Recognize threat vectors
+- Understand vulnerability assessment methodology

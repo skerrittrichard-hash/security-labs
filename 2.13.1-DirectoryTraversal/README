@@ -1,0 +1,19 @@
+# 2.13.1 - Recognizing Directory Traversal
+
+## Objective
+Perform a directory traversal attack on a vulnerable web app and examine Apache2 logs for attack artifacts.
+
+## Target
+- Metasploitable2: 192.168.4.53
+
+## Tools
+- DVWA (web vulnerability app)
+- Browser
+- PuTTY (SSH)
+- Apache2 access logs
+
+## Methodology
+[To be completed during lab execution]
+
+## Key Findings
+[To be completed during lab execution]

@@ -1,19 +1,151 @@
 # 2.13.1 - Recognizing Directory Traversal
 
 ## Objective
-Perform a directory traversal attack on a vulnerable web app and examine Apache2 logs for attack artifacts.
+Perform a directory traversal attack on a vulnerable web application (DVWA) and examine Apache2 web server logs for attack artifacts. This lab demonstrates both the attack methodology (Red Team) and forensic evidence collection (Blue Team).
 
 ## Target
-- Metasploitable2: 192.168.4.53
+- **System:** Metasploitable2 Linux VM
+- **IP Address:** 192.168.4.53
+- **Vulnerable Application:** DVWA (Damn Vulnerable Web Application)
+- **Vulnerability Type:** PHP Local File Inclusion (LFI) / Directory Traversal
 
-## Tools
-- DVWA (web vulnerability app)
-- Browser
-- PuTTY (SSH)
-- Apache2 access logs
+## Tools Used
+- DVWA - deliberately vulnerable web application
+- Browser (Firefox/Chrome)
+- PuTTY - SSH client for remote access
+- Apache2 access logs (`/var/log/apache2/access.log`)
+- Linux command-line utilities (`grep`, `cat`)
 
 ## Methodology
-[To be completed during lab execution]
+
+### Phase 1: Reconnaissance - Command Injection
+Before executing the directory traversal, we used DVWA's Command Execution vulnerability to map the filesystem:
+
+1. **Initial command injection test:** `ping 8.8.8.8` - confirmed basic command execution works
+2. **Directory enumeration:** `8.8.8.8;ls /` - discovered root filesystem structure
+3. **Web root discovery:** `8.8.8.8;ls /var/www` - identified DVWA installation path at `/var/www/dvwa`
+
+This reconnaissance identified the target application structure needed for the traversal attack.
+
+### Phase 2: Directory Traversal Attack
+Navigated to the File Inclusion (FI) vulnerability page and exploited it:
+
+**Attack URL:**
+```
+http://192.168.4.53/dvwa/vulnerabilities/fi/?page=../../../../../etc/passwd
+```
+
+**Attack Mechanism:**
+- The vulnerable PHP code accepts a `page` parameter without validation
+- The `../` sequences traverse up the directory tree
+- We escaped the web root and accessed `/etc/passwd` (a sensitive system file containing user account information)
+- The application displayed the file contents directly in the browser
+
+**Payload Breakdown:**
+```
+../../../../../etc/passwd
+```
+- Each `../` moves up one directory level
+- Starting from `/var/www/dvwa/vulnerabilities/fi/`
+- The sequence traverses to the root directory `/`
+- Then accesses `etc/passwd`
+
+### Phase 3: Forensic Evidence Collection
+Connected via SSH to Metasploitable2 and examined Apache2 logs:
+```bash
+ssh msfadmin@192.168.4.53
+cd /var/log/apache2
+grep "etc/passwd" access.log
+```
+
+The Apache access log captured the exact attack payload, proving that directory traversal attempts can be detected and logged by defenders.
+
+---
 
 ## Key Findings
-[To be completed during lab execution]
+
+### Attack Evidence
+![DVWA showing /etc/passwd contents](screenshots/01-dvwa-etc-passwd-traversal.png)
+
+The screenshot shows the File Inclusion vulnerability successfully displaying the contents of `/etc/passwd`. The file contains sensitive system information including:
+- Root account details
+- System service accounts
+- User login shells
+
+### Forensic Evidence
+![Apache2 access log showing directory traversal payload](screenshots/02-apache-log-directory-traversal.png)
+
+The Apache access log entry reveals:
+```
+192.168.4.43 - - [19/Jan/2026:13:01:21 -0500] "GET /dvwa/vulnerabilities/fi/?page=../../../../../etc/passwd HTTP/1.1" 200 5674 "-"
+```
+
+**Log Analysis:**
+- **Source IP:** 192.168.4.43 (attacker/Host PC)
+- **Timestamp:** 19/Jan/2026 13:01:21
+- **HTTP Method:** GET
+- **Vulnerable Path:** `/dvwa/vulnerabilities/fi/`
+- **Payload:** `?page=../../../../../etc/passwd`
+- **Response Code:** 200 (successful)
+- **Bytes Returned:** 5674 (size of /etc/passwd file)
+
+The HTTP 200 response code indicates the attack succeeded—the server processed the request and returned the requested file.
+
+---
+
+## Security Implications
+
+### Why This Vulnerability Matters
+1. **Information Disclosure** - Attackers can read sensitive files like `/etc/passwd`, application configuration files, private keys, or database credentials
+2. **System Reconnaissance** - Gathering file contents helps attackers understand system architecture and identify further attack vectors
+3. **Privilege Escalation** - Information from configuration files may lead to credential exposure or service vulnerabilities
+
+### Real-World Impact
+Directory traversal vulnerabilities have been exploited in production systems to:
+- Extract authentication credentials
+- Access source code repositories
+- Read SSH private keys
+- Access database configuration files containing credentials
+
+### Security Controls (Defense)
+1. **Input Validation** - Reject or sanitize paths containing `../`, `..\\`, or absolute path characters
+2. **Whitelisting** - Only allow specific, pre-approved file names or directories
+3. **Chroot/Sandboxing** - Restrict web application to specific directory tree
+4. **Least Privilege** - Run web server processes with minimal required permissions
+5. **Web Application Firewall (WAF)** - Detect and block directory traversal patterns
+6. **Security Headers** - Implement proper HTTP security headers
+
+---
+
+## Security+ Mapping
+
+**Relevant Security+ Objectives:**
+- **Domain 2.1:** Identify security vulnerabilities in web applications
+- **Domain 2.2:** Explain vulnerability scanning concepts
+- **Domain 2.3:** Explain the purpose of security controls
+- **Domain 4.4:** Implement secure coding practices
+- **Domain 4.5:** Analyze security logs and events
+
+**Key Concepts Demonstrated:**
+- **Access Control Bypass** - Circumventing application directory restrictions
+- **Path Traversal** - Using relative paths to access restricted files
+- **Forensic Analysis** - Using web server logs to identify attacks
+- **Vulnerability Exploitation** - Exploiting improper input validation
+
+---
+
+## Lab Conclusion
+
+This exercise demonstrates both the offensive and defensive aspects of web application security:
+- **Red Team:** Successfully bypassed application controls to access sensitive files
+- **Blue Team:** Identified attack in web server logs with complete details (timestamp, source, payload, outcome)
+
+Directory traversal remains a critical vulnerability because improper input validation is common in legacy applications and custom development. Defenders must monitor web server logs for suspicious path patterns to detect active attacks.
+
+---
+
+## References
+- OWASP Top 10 - A01:2021 Broken Access Control
+- OWASP Path Traversal: https://owasp.org/www-community/attacks/Path_Traversal
+- CWE-22: Improper Limitation of a Pathname to a Restricted Directory
+- Security+ SY0-701 Activity Companion - Activity 2.13.1

@@ -1,105 +1,151 @@
-# Exercise 1 - Honeypot
+# Exercise 2 - Dictionary & Brute Force Attack
 
 ## Objective
 
-You will use Kali Linux to test a Honeypot running on XP-PRO. This lab demonstrates how honeypots detect and log attack attempts.
+You will perform dictionary and brute force attacks against vulnerable services (Telnet and FTP) running on Metasploitable2. This lab demonstrates how weak credentials and inadequate authentication controls allow attackers to gain unauthorized access.
+
+## CompTIA Security+ Alignment
+
+**Module 2: Threats, Attacks, and Vulnerabilities**  
+**Objectives:** 2.1, 2.2, 2.3  
+**Focus:** Attack methodologies, vulnerability identification, credential compromise
 
 ## Lab Setup
 
 ### Computers Required
 - Kali Linux VM
-- XP-Pro VM (running Valhalla Honeypot 1.8)
+- Metasploitable2 VM
 
 ### Tools
-- Valhalla Honeypot 1.8
-- Linux terminal
-- nmap
-- telnet client
-- FTP client
+- nmap (network scanner)
+- Metasploit Framework
+- Hydra (password cracking tool)
+- Terminal/Command line
 
 ## Lab Steps
 
-### 1. Initial Setup
-Configure Valhalla Honeypot on XP-PRO and verify connectivity from Kali.
+### 1. Network Reconnaissance
+Scan the target network to identify active hosts and open services.
 
-### 2. Reconnaissance
-Scan the honeypot target to identify open ports and services.
+### 2. Service Enumeration
+Identify vulnerable services running on the target (Telnet, FTP).
 
-### 3. Attack Simulation
-Test honeypot response to:
-- FTP connection attempts
-- Telnet access attempts
-- Service enumeration
+### 3. Dictionary Attack - Telnet
+Perform a dictionary attack against Telnet service using weak credentials.
 
-### 4. Log Analysis
-Examine what the honeypot logged during the attack attempts.
+### 4. Brute Force Attack - FTP
+Execute a brute force attack against FTP service to gain unauthorized access.
+
+### 5. Credential Verification
+Confirm successful credential compromise and access.
 
 ## Commands
 
 ### Kali Linux Terminal
 
 ```bash
-# Verify network connectivity
-ping <XP-PRO IP>
+# Verify target IP
+ifconfig
 
-# Scan target for open ports and services
-nmap <XP-PRO IP>
+# Scan target for open ports
+nmap <Metasploitable2 IP>
+nmap -A <Metasploitable2 IP>
 
-# Clear terminal
-clear
+# Start Metasploit
+msfconsole
 
-# Attempt FTP connection
-ftp <XP-PRO IP>
-administrator
-password
-dir
-bye
+# Search for dictionary attack module
+search telnet
+search auxiliary/scanner/telnet
 
-# Attempt Telnet connection
-telnet <XP-PRO IP>
-administrator
-password
-letmein
-getlost!
+# Use Telnet scanner
+use auxiliary/scanner/telnet/telnet_version
+set RHOSTS <Metasploitable2 IP>
+show options
+run
+
+# Dictionary attack on Telnet (example with Hydra)
+hydra -L users.txt -P passwords.txt telnet://<Metasploitable2 IP>
+
+# FTP brute force (example with Hydra)
+hydra -L users.txt -P passwords.txt ftp://<Metasploitable2 IP>
+
+# Verify successful access
+telnet <Metasploitable2 IP>
+ftp <Metasploitable2 IP>
 ```
 
 ## What You're Testing
 
-**Honeypot Detection:** The Valhalla honeypot appears as a legitimate system with vulnerable services (FTP, Telnet), but actually logs and detects all interaction attempts.
+**Dictionary Attack:** Attempting to guess credentials using a pre-compiled list of common usernames and passwords.
+
+**Brute Force Attack:** Systematically trying every possible password combination until access is gained.
 
 **Key Learning Points:**
-- How honeypots detect unauthorized access attempts
-- What information is logged during attacks
-- How to identify fake services vs. real ones
-- Forensic evidence left by attackers
+- How weak credentials lead to unauthorized access
+- Why service enumeration is critical for attackers
+- How dictionary/brute force attacks exploit poor password policies
+- The role of account lockout policies in defending against these attacks
+
+## Findings
+
+### Nmap Scan Results
+Identified open ports including:
+- Port 21 (FTP) - Anonymous access or weak credentials
+- Port 23 (Telnet) - Unencrypted remote access
+- Additional services vulnerable to attack
+
+### Telnet Dictionary Attack Results
+Successfully compromised credentials through dictionary attack:
+- Username: [compromised]
+- Password: [found]
+- Method: Dictionary wordlist matched weak password
+
+### FTP Brute Force Results
+Successfully gained FTP access:
+- Username: [compromised]
+- Password: [cracked]
+- Method: Brute force attack with common password combinations
 
 ## Real-World Application
 
-Honeypots are used in production environments to:
-- Detect early-stage attacks before they hit real systems
-- Gather intelligence on attacker behavior and techniques
-- Alert security teams to intrusion attempts
-- Provide evidence for incident response investigations
+Dictionary and brute force attacks are commonly used in:
+- Initial access phase of penetration tests
+- Post-breach credential discovery
+- Lateral movement within compromised networks
+- Testing password policy effectiveness
+
+## Defense Mechanisms
+
+To defend against these attacks:
+- Enforce strong password policies (complexity, length, expiration)
+- Implement account lockout after failed attempts
+- Use encrypted protocols (SSH instead of Telnet)
+- Enable multi-factor authentication (MFA)
+- Monitor failed login attempts
+- Disable unnecessary services
+- Use intrusion detection systems (IDS)
 
 ## Expected Results
 
-1. Nmap should identify open ports (FTP, Telnet)
-2. FTP and Telnet connections should succeed
-3. Honeypot should log all connection attempts
-4. Log file should show source IP, commands executed, and timestamps
+1. Nmap identifies vulnerable services (Telnet, FTP)
+2. Dictionary attack successfully compromises Telnet credentials
+3. Brute force attack successfully compromises FTP credentials
+4. Attacker gains interactive access to services
+5. Unauthorized commands can be executed/files accessed
 
 ## Notes
 
-- This is a safe, controlled lab environment
-- The honeypot is intentionally vulnerable
-- In production, honeypots run on isolated network segments
-- Modern honeypots (like Valhalla) can emulate many operating systems and services
+- This is a controlled lab environment with intentionally weak credentials
+- In production, services like Telnet should be disabled in favor of SSH
+- Modern systems implement protections like rate-limiting and account lockouts
+- Real-world attacks often use tools like Hashcat, John the Ripper, or Hydra
 
 ---
 
 **Security+ Exam Focus:**  
-Understand honeypots as a detective control mechanism. Be familiar with terms like "deception technology" and how honeypots support incident detection and response.
+Understand the difference between dictionary attacks and brute force attacks. Know defensive mechanisms: account lockout policy, strong password requirements, MFA, protocol upgrades (SSH vs Telnet), and monitoring.
 
 **Created:** February 2026  
-**Activity File:** 1.3.1-Honeypot.txt  
-**Lab Duration:** 30-45 minutes
+**Lab Duration:** 45-60 minutes  
+**Difficulty:** Intermediate
